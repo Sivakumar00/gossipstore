@@ -181,51 +181,6 @@ describe("LRUCache", () => {
     });
   });
 
-  describe("keys, values, and entries operations", () => {
-    it("should return keys in order of most recently used to least recently used", () => {
-      const cache = new LRUCache<string, number>({ maxItems: 3 });
-
-      cache.set("a", 1);
-      cache.set("b", 2);
-      cache.set("c", 3);
-
-      // Access 'a' to make it the most recently used
-      cache.get("a");
-
-      expect(cache.keys()).toEqual(["a", "c", "b"]);
-    });
-
-    it("should return values in order of most recently used to least recently used", () => {
-      const cache = new LRUCache<string, number>({ maxItems: 3 });
-
-      cache.set("a", 1);
-      cache.set("b", 2);
-      cache.set("c", 3);
-
-      // Access 'a' to make it the most recently used
-      cache.get("a");
-
-      expect(cache.values()).toEqual([1, 3, 2]);
-    });
-
-    it("should return entries in order of most recently used to least recently used", () => {
-      const cache = new LRUCache<string, number>({ maxItems: 3 });
-
-      cache.set("a", 1);
-      cache.set("b", 2);
-      cache.set("c", 3);
-
-      // Access 'a' to make it the most recently used
-      cache.get("a");
-
-      expect(cache.entries()).toEqual([
-        ["a", 1],
-        ["c", 3],
-        ["b", 2],
-      ]);
-    });
-  });
-
   describe("Memory-based eviction policy", () => {
     it("should track memory usage correctly", () => {
       const cache = new LRUCache<string, string>({ maxMemory: 100 });

@@ -243,40 +243,4 @@ export class LRUCache<K, V> {
     // Reset memory usage
     this.currentMemoryUsage = 0;
   }
-
-  /**
-   * Get all keys in the cache (most recently used first)
-   */
-  keys(): K[] {
-    return this.collectFromList((node) => node.value[0]);
-  }
-
-  /**
-   * Get all values in the cache (most recently used first)
-   */
-  values(): V[] {
-    return this.collectFromList((node) => node.value[1]);
-  }
-
-  /**
-   * Get all entries in the cache (most recently used first)
-   */
-  entries(): [K, V][] {
-    return this.collectFromList((node) => [...node.value]);
-  }
-
-  /**
-   * Helper to collect data from the linked list
-   */
-  private collectFromList<T>(mapper: (node: ListNode<[K, V]>) => T): T[] {
-    const result: T[] = [];
-    let current = this.list.getFirst();
-
-    while (current) {
-      result.push(mapper(current));
-      current = current.next;
-    }
-
-    return result;
-  }
 }
