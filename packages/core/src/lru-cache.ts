@@ -1,0 +1,282 @@
+import { DoublyLinkedList, ListNode } from "./linked-list";
+
+/**
+ * Options for configuring the LRUCache
+ */
+export interface LRUCacheOptions<V> {
+  /** Maximum number of items to store in the cache */
+  maxItems?: number;
+
+  /** Maximum memory usage in bytes */
+  maxMemory?: number;
+
+  /** Function to calculate the memory size of a value */
+  sizeCalculator?: (value: V) => number;
+}
+
+/**
+ * LRUCache implementation with O(1) operations for get/set
+ * Uses a combination of a HashMap and DoublyLinkedList to achieve constant time complexity
+ */
+export class LRUCache<K, V> {
+  private maxItems: number | undefined;
+  private maxMemory: number | undefined;
+  private sizeCalculator: ((value: V) => number) | undefined;
+  private currentMemoryUsage: number = 0;
+  private cache: Map<K, ListNode<[K, V]>>;
+  private list: DoublyLinkedList<[K, V]>;
+
+  /**
+   * Create a new LRUCache with the specified options
+   * @param options Configuration options
+   */
+  constructor(options: LRUCacheOptions<V>) {
+    this.maxItems = options.maxItems;
+    this.maxMemory = options.maxMemory;
+    this.sizeCalculator = options.sizeCalculator;
+
+    // Validate options
+    if (this.maxItems !== undefined && this.maxItems <= 0) {
+      throw new Error("Maximum items must be a positive number");
+    }
+
+    if (this.maxMemory !== undefined && this.maxMemory <= 0) {
+      throw new Error("Maximum memory must be a positive number");
+    }
+
+    if (!this.maxItems && !this.maxMemory) {
+      throw new Error("Either maxItems or maxMemory must be provided");
+    }
+
+    this.cache = new Map<K, ListNode<[K, V]>>();
+    this.list = new DoublyLinkedList<[K, V]>();
+  }
+
+  /**
+   * Get the current size of the cache (number of items)
+   */
+  get size(): number {
+    return this.cache.size;
+  }
+
+  /**
+   * Get the current memory usage of the cache in bytes
+   */
+  get memoryUsage(): number {
+    return this.currentMemoryUsage;
+  }
+
+  /**
+   * Check if the cache is empty
+   */
+  isEmpty(): boolean {
+    return this.cache.size === 0;
+  }
+
+  /**
+   * Check if the cache contains a key
+   * @param key The key to check
+   */
+  has(key: K): boolean {
+    return this.cache.has(key);
+  }
+
+  /**
+   * Get a value from the cache
+   * @param key The key to retrieve
+   * @returns The value or undefined if not found
+   */
+  get(key: K): V | undefined {
+    const node = this.cache.get(key);
+
+    if (!node) {
+      return undefined;
+    }
+
+    // Move to front (most recently used)
+    this.list.moveToFront(node);
+
+    return node.value[1];
+  }
+
+  /**
+   * Calculate the size of a value in bytes
+   */
+  private calculateSize(value: V): number {
+    if (this.sizeCalculator) {
+      return this.sizeCalculator(value);
+    }
+
+    if (value === null || value === undefined) return 0;
+    if (typeof value === "boolean") return 4;
+    if (typeof value === "number") return 8;
+    if (typeof value === "string") return value.length * 2;
+    if (value instanceof Date) return 8;
+    if (Array.isArray(value)) return 40 + value.length * 8;
+
+    if (typeof value === "object") {
+      try {
+        return JSON.stringify(value).length * 2;
+      } catch {
+        return 1024;
+      }
+    }
+
+    return 100;
+  }
+
+  /**
+   * Check if adding a value would exceed memory limits
+   */
+  private wouldExceedMemoryLimit(value: V): boolean {
+    if (!this.maxMemory) return false;
+    return this.currentMemoryUsage + this.calculateSize(value) > this.maxMemory;
+  }
+
+  /**
+   * Evict items until we're under the memory and item limits
+   */
+  private evictIfNeeded(requiredSpace: number = 0): void {
+    if (!this.maxItems && !this.maxMemory) return;
+
+    const needToEvictItems =
+      this.maxItems !== undefined && this.cache.size >= this.maxItems;
+    const needToEvictMemory =
+      this.maxMemory !== undefined &&
+      this.currentMemoryUsage + requiredSpace > this.maxMemory;
+
+    while ((needToEvictItems || needToEvictMemory) && !this.isEmpty()) {
+      const lastNode = this.list.getLast();
+      if (!lastNode) break;
+
+      const [oldKey, oldValue] = lastNode.value;
+      this.cache.delete(oldKey);
+      this.list.remove(lastNode);
+
+      if (this.maxMemory) {
+        this.currentMemoryUsage -= this.calculateSize(oldValue);
+      }
+
+      // Check if we can stop evicting
+      const underItemLimit = !this.maxItems || this.cache.size < this.maxItems;
+      const underMemoryLimit =
+        !this.maxMemory ||
+        this.currentMemoryUsage + requiredSpace <= this.maxMemory;
+
+      if (
+        (underItemLimit && !needToEvictMemory) ||
+        (underMemoryLimit && !needToEvictItems)
+      ) {
+        break;
+      }
+    }
+  }
+
+  /**
+   * Set a value in the cache
+   */
+  set(key: K, value: V): this {
+    const valueSize = this.maxMemory ? this.calculateSize(value) : 0;
+
+    // Update existing item
+    if (this.cache.has(key)) {
+      const node = this.cache.get(key)!;
+      const oldValue = node.value[1];
+
+      if (this.maxMemory) {
+        this.currentMemoryUsage -= this.calculateSize(oldValue);
+        this.currentMemoryUsage += valueSize;
+      }
+
+      node.value = [key, value];
+      this.list.moveToFront(node);
+      return this;
+    }
+
+    // Skip if item is too large
+    if (this.maxMemory && valueSize > this.maxMemory) {
+      return this;
+    }
+
+    // Make room for new item
+    this.evictIfNeeded(valueSize);
+
+    // Add new item
+    const newNode = this.list.addFront([key, value]);
+    this.cache.set(key, newNode);
+
+    if (this.maxMemory) {
+      this.currentMemoryUsage += valueSize;
+    }
+
+    return this;
+  }
+
+  /**
+   * Remove an item from the cache
+   * @param key The key to remove
+   * @returns True if the item was removed, false if it didn't exist
+   */
+  delete(key: K): boolean {
+    const node = this.cache.get(key);
+
+    if (!node) {
+      return false;
+    }
+
+    // Update memory usage
+    if (this.maxMemory) {
+      this.currentMemoryUsage -= this.calculateSize(node.value[1]);
+    }
+
+    this.list.remove(node);
+    return this.cache.delete(key);
+  }
+
+  /**
+   * Clear all items from the cache
+   */
+  clear(): void {
+    this.cache.clear();
+    // Create a new list instead of trying to clear the existing one
+    this.list = new DoublyLinkedList<[K, V]>();
+    // Reset memory usage
+    this.currentMemoryUsage = 0;
+  }
+
+  /**
+   * Get all keys in the cache (most recently used first)
+   */
+  keys(): K[] {
+    return this.collectFromList((node) => node.value[0]);
+  }
+
+  /**
+   * Get all values in the cache (most recently used first)
+   */
+  values(): V[] {
+    return this.collectFromList((node) => node.value[1]);
+  }
+
+  /**
+   * Get all entries in the cache (most recently used first)
+   */
+  entries(): [K, V][] {
+    return this.collectFromList((node) => [...node.value]);
+  }
+
+  /**
+   * Helper to collect data from the linked list
+   */
+  private collectFromList<T>(mapper: (node: ListNode<[K, V]>) => T): T[] {
+    const result: T[] = [];
+    let current = this.list.getFirst();
+
+    while (current) {
+      result.push(mapper(current));
+      current = current.next;
+    }
+
+    return result;
+  }
+}
