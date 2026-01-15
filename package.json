@@ -1,5 +1,5 @@
 {
-  "name": "edgestore",
+  "name": "gossipstore",
   "private": true,
   "scripts": {
     "build": "turbo run build",

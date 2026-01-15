@@ -1,7 +1,7 @@
 {
-  "name": "@edgestate/core",
+  "name": "@gossipstore/core",
   "version": "0.1.0",
-  "description": "Core data structures and conflict logic for EdgeState",
+  "description": "Core data structures and conflict logic for GossipStore",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
