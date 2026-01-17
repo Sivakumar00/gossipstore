@@ -2,6 +2,10 @@
 
 GossipStore is a distributed key-value store using Gossip Protocols and Vector Clocks for consistency.
 
+### Links:
+
+- [Medium](https://nikasakana.medium.com/how-to-design-a-distributed-key-value-store-cfd83248541b)
+
 ## What's inside?
 
 This monorepo includes the following packages:
