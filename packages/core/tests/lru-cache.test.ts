@@ -358,8 +358,8 @@ describe('LRUCache', () => {
 
       cache.set('a', { name: 'John', age: 30 });
       expect(cache.get('a')).toEqual({ name: 'John', age: 30 });
-      // Memory usage should be 48 bytes - { name: "John", age: 30 } is  24 character * 2 bytes each
-      expect(cache.memoryUsage).toEqual(48);
+      // Memory usage should be 24 bytes - { name: "John", age: 30 } is  24 character by UTF-8 encoding
+      expect(cache.memoryUsage).toEqual(24);
 
       // add more JSON objects - with maxItems: 3, adding a 4th item will evict the first one
       cache.set('b', { name: 'Siva', age: 30 });
