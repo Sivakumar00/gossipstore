@@ -18,14 +18,17 @@ describe('LRUCache', () => {
     });
 
     it('should initialize with memory limit', () => {
-      const options: LRUCacheOptions<number> = { maxMemory: 1000 };
+      const options: LRUCacheOptions<number> = { maxMemoryBytes: 1000 };
       const cache = new LRUCache<string, number>(options);
       expect(cache.size).toBe(0);
       expect(cache.memoryUsage).toBe(0);
     });
 
     it('should initialize with both item and memory limits', () => {
-      const options: LRUCacheOptions<number> = { maxItems: 5, maxMemory: 1000 };
+      const options: LRUCacheOptions<number> = {
+        maxItems: 5,
+        maxMemoryBytes: 1000,
+      };
       const cache = new LRUCache<string, number>(options);
       expect(cache.size).toBe(0);
       expect(cache.memoryUsage).toBe(0);
@@ -37,12 +40,15 @@ describe('LRUCache', () => {
     });
 
     it('should throw an error when initialized with invalid max memory', () => {
-      expect(() => new LRUCache<string, number>({ maxMemory: 0 })).toThrow();
-      expect(() => new LRUCache<string, number>({ maxMemory: -1 })).toThrow();
+      expect(() => new LRUCache<string, number>({ maxMemoryBytes: 0 })).toThrow();
+      expect(() => new LRUCache<string, number>({ maxMemoryBytes: -1 })).toThrow();
     });
 
-    it('should throw an error when initialized without any limits', () => {
-      expect(() => new LRUCache<string, number>({} as LRUCacheOptions<number>)).toThrow();
+    it('should use default memory limit when initialized without explicit limits', () => {
+      // This should not throw anymore since we default to half of heap memory
+      const cache = new LRUCache<string, number>({});
+      expect(cache).toBeInstanceOf(LRUCache);
+      expect(cache.memoryUsage).toBe(0);
     });
   });
 
@@ -181,7 +187,7 @@ describe('LRUCache', () => {
 
   describe('Memory-based eviction policy', () => {
     it('should track memory usage correctly', () => {
-      const cache = new LRUCache<string, string>({ maxMemory: 100 });
+      const cache = new LRUCache<string, string>({ maxMemoryBytes: 100 });
 
       cache.set('a', 'small'); // ~10 bytes
       expect(cache.memoryUsage).toBeGreaterThan(0);
@@ -195,7 +201,7 @@ describe('LRUCache', () => {
       // Create a cache with a small memory limit and a custom size calculator
       // to make the test more predictable
       const cache = new LRUCache<string, string>({
-        maxMemory: 20,
+        maxMemoryBytes: 20,
         sizeCalculator: (value) => value.length,
       });
 
@@ -224,7 +230,7 @@ describe('LRUCache', () => {
     });
 
     it('should not add items that exceed the memory limit', () => {
-      const cache = new LRUCache<string, string>({ maxMemory: 20 });
+      const cache = new LRUCache<string, string>({ maxMemoryBytes: 20 });
 
       // This value is too large to fit in the cache
       cache.set('a', 'this is a very large value that exceeds the memory limit');
@@ -234,7 +240,7 @@ describe('LRUCache', () => {
     });
 
     it('should update memory usage when deleting items', () => {
-      const cache = new LRUCache<string, string>({ maxMemory: 100 });
+      const cache = new LRUCache<string, string>({ maxMemoryBytes: 100 });
 
       cache.set('a', 'value1');
       cache.set('b', 'value2');
@@ -246,7 +252,7 @@ describe('LRUCache', () => {
     });
 
     it('should reset memory usage when clearing the cache', () => {
-      const cache = new LRUCache<string, string>({ maxMemory: 100 });
+      const cache = new LRUCache<string, string>({ maxMemoryBytes: 100 });
 
       cache.set('a', 'value1');
       cache.set('b', 'value2');
@@ -263,7 +269,7 @@ describe('LRUCache', () => {
     it('should respect both item and memory limits', () => {
       const cache = new LRUCache<string, string>({
         maxItems: 5,
-        maxMemory: 50,
+        maxMemoryBytes: 50,
       });
 
       // Add items until we hit the memory limit (before item limit)
@@ -295,7 +301,7 @@ describe('LRUCache', () => {
       const sizeCalculator = (value: string) => value.length;
 
       const cache = new LRUCache<string, string>({
-        maxMemory: 10,
+        maxMemoryBytes: 10,
         sizeCalculator,
       });
 
@@ -338,6 +344,66 @@ describe('LRUCache', () => {
       expect(cache.get('b')).toBe(20);
       expect(cache.get('d')).toBe(4);
       expect(cache.get('e')).toBe(5);
+    });
+  });
+
+  describe('Other data types', () => {
+    it('should handle JSON data correctly', () => {
+      // Use a fixed memory limit for predictable tests
+      // Make maxMemoryBytes large enough to hold all items
+      const cache = new LRUCache<string, object>({
+        maxItems: 3,
+        maxMemoryBytes: 1000,
+      });
+
+      cache.set('a', { name: 'John', age: 30 });
+      expect(cache.get('a')).toEqual({ name: 'John', age: 30 });
+      // Memory usage should be 48 bytes - { name: "John", age: 30 } is  24 character * 2 bytes each
+      expect(cache.memoryUsage).toEqual(48);
+
+      // add more JSON objects - with maxItems: 3, adding a 4th item will evict the first one
+      cache.set('b', { name: 'Siva', age: 30 });
+      cache.set('c', { name: 'Siva', age: 30 });
+      cache.set('d', { name: 'Siva', age: 30 });
+
+      // 'a' should be evicted due to maxItems: 3
+      expect(cache.get('a')).toBeUndefined();
+      // These should still be in the cache
+      expect(cache.get('b')).toEqual({ name: 'Siva', age: 30 });
+      expect(cache.get('c')).toEqual({ name: 'Siva', age: 30 });
+      expect(cache.get('d')).toEqual({ name: 'Siva', age: 30 });
+
+      /** Handle INVALID json */
+      cache.set('e', [{ name: '' }]);
+      expect(cache.get('e')).toBeUndefined();
+    });
+
+    it('should work with maxItems only', () => {
+      const cache = new LRUCache<string, object>({
+        maxItems: 3,
+      });
+
+      cache.set('a', { name: 'John', age: 30 });
+      // Memory usage should be greater than 0 even with just maxItems
+      expect(cache.memoryUsage).toBeGreaterThan(0);
+
+      // LRU eviction should still work based on maxItems
+      cache.set('b', { name: 'Siva', age: 30 });
+      cache.set('c', { name: 'Siva', age: 30 });
+      cache.set('d', { name: 'Siva', age: 30 });
+
+      expect(cache.get('a')).toBeUndefined();
+      expect(cache.get('b')).toEqual({ name: 'Siva', age: 30 });
+    });
+
+    it('should work with Date type', () => {
+      const cache = new LRUCache<string, Date>({
+        maxItems: 3,
+      });
+
+      cache.set('a', new Date());
+      expect(cache.get('a')).toBeInstanceOf(Date);
+      expect(cache.get('a')).toBe(cache.get('a'));
     });
   });
 });

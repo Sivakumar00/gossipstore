@@ -8,7 +8,7 @@ export interface LRUCacheOptions<V> {
   maxItems?: number;
 
   /** Maximum memory usage in bytes */
-  maxMemory?: number;
+  maxMemoryBytes?: number;
 
   /** Function to calculate the memory size of a value */
   sizeCalculator?: (value: V) => number;
@@ -19,12 +19,17 @@ export interface LRUCacheOptions<V> {
  * Uses a combination of a HashMap and DoublyLinkedList to achieve constant time complexity
  */
 export class LRUCache<K, V> {
-  private maxItems: number | undefined;
-  private maxMemory: number | undefined;
-  private sizeCalculator: ((value: V) => number) | undefined;
+  private readonly maxItems: number | undefined;
+  private readonly maxMemoryBytes: number;
+  private readonly sizeCalculator: ((value: V) => number) | undefined;
   private currentMemoryUsage: number = 0;
   private cache: Map<K, ListNode<[K, V]>>;
   private list: DoublyLinkedList<[K, V]>;
+
+  // Default to half of available heap memory
+  private static getDefaultMemoryLimit(): number {
+    return Math.floor(process.memoryUsage().heapTotal / 2);
+  }
 
   /**
    * Create a new LRUCache with the specified options
@@ -32,7 +37,13 @@ export class LRUCache<K, V> {
    */
   constructor(options: LRUCacheOptions<V>) {
     this.maxItems = options.maxItems;
-    this.maxMemory = options.maxMemory;
+
+    // Use provided maxMemoryBytes or default to half of heap
+    this.maxMemoryBytes =
+      options.maxMemoryBytes !== undefined
+        ? options.maxMemoryBytes
+        : LRUCache.getDefaultMemoryLimit();
+
     this.sizeCalculator = options.sizeCalculator;
 
     // Validate options
@@ -40,12 +51,8 @@ export class LRUCache<K, V> {
       throw new Error('Maximum items must be a positive number');
     }
 
-    if (this.maxMemory !== undefined && this.maxMemory <= 0) {
+    if (this.maxMemoryBytes <= 0) {
       throw new Error('Maximum memory must be a positive number');
-    }
-
-    if (!this.maxItems && !this.maxMemory) {
-      throw new Error('Either maxItems or maxMemory must be provided');
     }
 
     this.cache = new Map<K, ListNode<[K, V]>>();
@@ -116,7 +123,7 @@ export class LRUCache<K, V> {
 
     if (typeof value === 'object') {
       try {
-        return JSON.stringify(value).length * 2;
+        return Buffer.byteLength(JSON.stringify(value), 'utf8');
       } catch {
         return 1024;
       }
@@ -126,22 +133,14 @@ export class LRUCache<K, V> {
   }
 
   /**
-   * Check if adding a value would exceed memory limits
-   */
-  private wouldExceedMemoryLimit(value: V): boolean {
-    if (!this.maxMemory) return false;
-    return this.currentMemoryUsage + this.calculateSize(value) > this.maxMemory;
-  }
-
-  /**
    * Evict items until we're under the memory and item limits
    */
   private evictIfNeeded(requiredSpace: number = 0): void {
-    if (!this.maxItems && !this.maxMemory) return;
-
+    // Check if we need to evict based on item count
     const needToEvictItems = this.maxItems !== undefined && this.cache.size >= this.maxItems;
-    const needToEvictMemory =
-      this.maxMemory !== undefined && this.currentMemoryUsage + requiredSpace > this.maxMemory;
+
+    // Check if we need to evict based on memory usage
+    const needToEvictMemory = this.currentMemoryUsage + requiredSpace > this.maxMemoryBytes;
 
     while ((needToEvictItems || needToEvictMemory) && !this.isEmpty()) {
       const lastNode = this.list.getLast();
@@ -151,14 +150,11 @@ export class LRUCache<K, V> {
       this.cache.delete(oldKey);
       this.list.remove(lastNode);
 
-      if (this.maxMemory) {
-        this.currentMemoryUsage -= this.calculateSize(oldValue);
-      }
+      this.currentMemoryUsage -= this.calculateSize(oldValue);
 
       // Check if we can stop evicting
       const underItemLimit = !this.maxItems || this.cache.size < this.maxItems;
-      const underMemoryLimit =
-        !this.maxMemory || this.currentMemoryUsage + requiredSpace <= this.maxMemory;
+      const underMemoryLimit = this.currentMemoryUsage + requiredSpace <= this.maxMemoryBytes;
 
       if ((underItemLimit && !needToEvictMemory) || (underMemoryLimit && !needToEvictItems)) {
         break;
@@ -170,17 +166,15 @@ export class LRUCache<K, V> {
    * Set a value in the cache
    */
   set(key: K, value: V): this {
-    const valueSize = this.maxMemory ? this.calculateSize(value) : 0;
+    const valueSize = this.calculateSize(value);
 
     // Update existing item
     if (this.cache.has(key)) {
       const node = this.cache.get(key)!;
       const oldValue = node.value[1];
 
-      if (this.maxMemory) {
-        this.currentMemoryUsage -= this.calculateSize(oldValue);
-        this.currentMemoryUsage += valueSize;
-      }
+      this.currentMemoryUsage -= this.calculateSize(oldValue);
+      this.currentMemoryUsage += valueSize;
 
       node.value = [key, value];
       this.list.moveToFront(node);
@@ -188,7 +182,7 @@ export class LRUCache<K, V> {
     }
 
     // Skip if item is too large
-    if (this.maxMemory && valueSize > this.maxMemory) {
+    if (valueSize > this.maxMemoryBytes) {
       return this;
     }
 
@@ -199,9 +193,7 @@ export class LRUCache<K, V> {
     const newNode = this.list.addFront([key, value]);
     this.cache.set(key, newNode);
 
-    if (this.maxMemory) {
-      this.currentMemoryUsage += valueSize;
-    }
+    this.currentMemoryUsage += valueSize;
 
     return this;
   }
@@ -219,9 +211,7 @@ export class LRUCache<K, V> {
     }
 
     // Update memory usage
-    if (this.maxMemory) {
-      this.currentMemoryUsage -= this.calculateSize(node.value[1]);
-    }
+    this.currentMemoryUsage -= this.calculateSize(node.value[1]);
 
     this.list.remove(node);
     return this.cache.delete(key);
