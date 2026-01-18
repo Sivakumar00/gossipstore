@@ -10,27 +10,28 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        node-version: [24]
-
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: 'pnpm'
-
+      # 1️⃣ Setup pnpm FIRST
       - name: Setup pnpm
         uses: pnpm/action-setup@v3
         with:
           version: 9
+          run_install: false
 
+      # 2️⃣ Setup Node.js (pnpm cache works now)
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: 'pnpm'
+
+      # 3️⃣ Install deps
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # 4️⃣ Run Jest
       - name: Run tests
         run: pnpm test
