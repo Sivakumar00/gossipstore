@@ -4,7 +4,6 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node Version](https://img.shields.io/badge/node-24.x-brightgreen.svg)](https://nodejs.org/)
 [![codecov](https://codecov.io/gh/sivakumar00/gossipstore/branch/main/graph/badge.svg)](https://codecov.io/gh/sivakumar00/gossipstore)
-![Dependabot Status](https://github.com/sivakumar00/gossipstore/workflows/Dependabot%20updates/badge.svg)
 
 A distributed key-value store using Gossip Protocols and Vector Clocks for eventual consistency.
 
