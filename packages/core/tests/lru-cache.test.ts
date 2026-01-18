@@ -1,5 +1,5 @@
 import { describe, it, expect } from "@jest/globals";
-import { LRUCache, LRUCacheOptions } from "../src/lru-cache";
+import { LRUCache, LRUCacheOptions } from "../src/core/lru-cache";
 
 describe("LRUCache", () => {
   describe("initialization", () => {
@@ -43,7 +43,7 @@ describe("LRUCache", () => {
 
     it("should throw an error when initialized without any limits", () => {
       expect(
-        () => new LRUCache<string, number>({} as LRUCacheOptions<number>)
+        () => new LRUCache<string, number>({} as LRUCacheOptions<number>),
       ).toThrow();
     });
   });
@@ -231,7 +231,7 @@ describe("LRUCache", () => {
       // This value is too large to fit in the cache
       cache.set(
         "a",
-        "this is a very large value that exceeds the memory limit"
+        "this is a very large value that exceeds the memory limit",
       );
 
       expect(cache.size).toBe(0);

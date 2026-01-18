@@ -1,5 +1,5 @@
 import { describe, it, expect } from "@jest/globals";
-import { DoublyLinkedList, ListNode } from "../src/linked-list";
+import { DoublyLinkedList, ListNode } from "../src/components/linked-list";
 
 describe("ListNode", () => {
   it("should create a node with the correct value", () => {

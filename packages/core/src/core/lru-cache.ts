@@ -1,4 +1,4 @@
-import { DoublyLinkedList, ListNode } from "./linked-list";
+import { DoublyLinkedList, ListNode } from "../components/linked-list";
 
 /**
  * Options for configuring the LRUCache
