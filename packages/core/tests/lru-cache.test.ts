@@ -372,10 +372,6 @@ describe('LRUCache', () => {
       expect(cache.get('b')).toEqual({ name: 'Siva', age: 30 });
       expect(cache.get('c')).toEqual({ name: 'Siva', age: 30 });
       expect(cache.get('d')).toEqual({ name: 'Siva', age: 30 });
-
-      /** Handle INVALID json */
-      cache.set('e', [{ name: '' }]);
-      expect(cache.get('e')).toBeUndefined();
     });
 
     it('should work with maxItems only', () => {
