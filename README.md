@@ -4,6 +4,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node Version](https://img.shields.io/badge/node-24.x-brightgreen.svg)](https://nodejs.org/)
 [![codecov](https://codecov.io/gh/sivakumar00/gossipstore/branch/main/graph/badge.svg)](https://codecov.io/gh/sivakumar00/gossipstore)
+![Dependabot Status](https://github.com/sivakumar00/gossipstore/workflows/Dependabot%20updates/badge.svg)
 
 A distributed key-value store using Gossip Protocols and Vector Clocks for eventual consistency.
 
@@ -118,6 +119,43 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 3. Commit your changes (`git commit -m 'Add some amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
+
+## Publishing to NPM
+
+This package is published to NPM using GitHub Actions. To publish a new version:
+
+### Automatic Publishing (Recommended)
+
+1. Go to the GitHub repository
+2. Navigate to Actions → Publish to NPM
+3. Click "Run workflow"
+4. Select the version bump type (patch, minor, major) or specify a version
+5. Click "Run workflow"
+
+The workflow will:
+
+- Build and test the package
+- Bump the version according to your selection
+- Publish to NPM
+- Push the version commit and tag to GitHub
+
+### Manual Publishing
+
+```bash
+# Navigate to the core package
+cd packages/core
+
+# Bump the version (patch, minor, or major)
+npm version patch
+
+# Build the package
+pnpm build
+
+# Publish to NPM
+npm publish
+```
+
+Note: You need to be logged in to NPM (`npm login`) and have appropriate permissions to publish.
 
 ## License
 

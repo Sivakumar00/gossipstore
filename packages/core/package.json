@@ -2,6 +2,22 @@
   "name": "@gossipstore/core",
   "version": "0.1.0",
   "description": "Core data structures and conflict logic for GossipStore",
+  "author": "Sivakumar",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sivakumar00/gossipstore.git"
+  },
+  "keywords": [
+    "gossip",
+    "vector-clock",
+    "distributed",
+    "key-value",
+    "lru-cache"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
