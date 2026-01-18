@@ -1,0 +1,19 @@
+# Build outputs
+dist
+.turbo
+.next
+out
+build
+
+# Dependencies
+node_modules
+
+# Package files
+pnpm-lock.yaml
+
+# Coverage reports
+coverage
+
+# Misc
+.DS_Store
+*.pem

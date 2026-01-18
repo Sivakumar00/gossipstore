@@ -1,4 +1,4 @@
-import { DoublyLinkedList, ListNode } from "../components/linked-list";
+import { DoublyLinkedList, ListNode } from '../components/linked-list';
 
 /**
  * Options for configuring the LRUCache
@@ -37,15 +37,15 @@ export class LRUCache<K, V> {
 
     // Validate options
     if (this.maxItems !== undefined && this.maxItems <= 0) {
-      throw new Error("Maximum items must be a positive number");
+      throw new Error('Maximum items must be a positive number');
     }
 
     if (this.maxMemory !== undefined && this.maxMemory <= 0) {
-      throw new Error("Maximum memory must be a positive number");
+      throw new Error('Maximum memory must be a positive number');
     }
 
     if (!this.maxItems && !this.maxMemory) {
-      throw new Error("Either maxItems or maxMemory must be provided");
+      throw new Error('Either maxItems or maxMemory must be provided');
     }
 
     this.cache = new Map<K, ListNode<[K, V]>>();
@@ -108,13 +108,13 @@ export class LRUCache<K, V> {
     }
 
     if (value === null || value === undefined) return 0;
-    if (typeof value === "boolean") return 4;
-    if (typeof value === "number") return 8;
-    if (typeof value === "string") return value.length * 2;
+    if (typeof value === 'boolean') return 4;
+    if (typeof value === 'number') return 8;
+    if (typeof value === 'string') return value.length * 2;
     if (value instanceof Date) return 8;
     if (Array.isArray(value)) return 40 + value.length * 8;
 
-    if (typeof value === "object") {
+    if (typeof value === 'object') {
       try {
         return JSON.stringify(value).length * 2;
       } catch {
@@ -139,11 +139,9 @@ export class LRUCache<K, V> {
   private evictIfNeeded(requiredSpace: number = 0): void {
     if (!this.maxItems && !this.maxMemory) return;
 
-    const needToEvictItems =
-      this.maxItems !== undefined && this.cache.size >= this.maxItems;
+    const needToEvictItems = this.maxItems !== undefined && this.cache.size >= this.maxItems;
     const needToEvictMemory =
-      this.maxMemory !== undefined &&
-      this.currentMemoryUsage + requiredSpace > this.maxMemory;
+      this.maxMemory !== undefined && this.currentMemoryUsage + requiredSpace > this.maxMemory;
 
     while ((needToEvictItems || needToEvictMemory) && !this.isEmpty()) {
       const lastNode = this.list.getLast();
@@ -160,13 +158,9 @@ export class LRUCache<K, V> {
       // Check if we can stop evicting
       const underItemLimit = !this.maxItems || this.cache.size < this.maxItems;
       const underMemoryLimit =
-        !this.maxMemory ||
-        this.currentMemoryUsage + requiredSpace <= this.maxMemory;
+        !this.maxMemory || this.currentMemoryUsage + requiredSpace <= this.maxMemory;
 
-      if (
-        (underItemLimit && !needToEvictMemory) ||
-        (underMemoryLimit && !needToEvictItems)
-      ) {
+      if ((underItemLimit && !needToEvictMemory) || (underMemoryLimit && !needToEvictItems)) {
         break;
       }
     }

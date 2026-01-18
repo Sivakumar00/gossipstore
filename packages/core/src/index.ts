@@ -1,1 +1,1 @@
-export * from "./core/lru-cache";
+export * from './core/lru-cache';
