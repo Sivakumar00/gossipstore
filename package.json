@@ -2,7 +2,9 @@
   "name": "gossipstore",
   "private": true,
   "scripts": {
+    "clean": "turbo run clean",
     "build": "turbo run build",
+    "build:prod": "turbo run build:prod",
     "test": "turbo run test",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,md}\"",
