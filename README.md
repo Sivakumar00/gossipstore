@@ -1,6 +1,6 @@
 # GossipStore
 
-![Tests](https://github.com/Sivakumara/gossipstore/actions/workflows/tests.yml/badge.svg)
+![Tests](https://github.com/sivakumar00/gossipstore/actions/workflows/tests.yml/badge.svg)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node Version](https://img.shields.io/badge/node-24.x-brightgreen.svg)](https://nodejs.org/)
 
